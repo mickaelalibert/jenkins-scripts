@@ -87,23 +87,26 @@ def releaseMavenProject(components, dryRun) {
 
                 sh 'rm -rf *'
                 sh 'rm -rf .git'
-                withEnv(['HOME=/root']) {
+
+                def mvnHome = tool 'Maven 3.2.2'
+                def javaHome = tool 'JDK 8'
+
+                withEnv(["PATH+MAVEN=${mvnHome}/bin", "HOME=/root", "JAVA_HOME=${javaHome}"]) {
 
                     git url: scmUrl, credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d'
-                    def mvnHome = tool 'Maven 3.2.2'
 
                     // set version
-                    sh "${mvnHome}/bin/mvn -B versions:set -DnewVersion=${c.version.releaseVersion()} -DgenerateBackupPoms=false"
+                    sh "mvn -B versions:set -DnewVersion=${c.version.releaseVersion()} -DgenerateBackupPoms=false"
 
                     // use release version of each -SNAPSHOT gravitee artifact
-                    sh "${mvnHome}/bin/mvn -B -U versions:update-properties -Dincludes=io.gravitee.*:* -DgenerateBackupPoms=false"
+                    sh "mvn -B -U versions:update-properties -Dincludes=io.gravitee.*:* -DgenerateBackupPoms=false"
 
                     // deploy
                     if ( dryRun ) {
                         sh "cat pom.xml"
-                        sh "${mvnHome}/bin/mvn -B -U clean install"
+                        sh "mvn -B -U clean install"
                     } else {
-                        sh "${mvnHome}/bin/mvn -B -U -P gravitee-release clean deploy"
+                        sh "mvn -B -U -P gravitee-release clean deploy"
                     }
 
                     // commit, tag the release
@@ -112,7 +115,7 @@ def releaseMavenProject(components, dryRun) {
                     sh "git tag ${c.version.releaseVersion()}"
 
                     // update next version
-                    sh "${mvnHome}/bin/mvn -B versions:set -DnewVersion=${c.version.nextMinorSnapshotVersion()} -DgenerateBackupPoms=false"
+                    sh "mvn -B versions:set -DnewVersion=${c.version.nextMinorSnapshotVersion()} -DgenerateBackupPoms=false"
 
                     // commit, tag the snapshot
                     sh "git add --update"
