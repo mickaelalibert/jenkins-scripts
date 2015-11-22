@@ -99,7 +99,22 @@ def releaseMavenProject(components, dryRun) {
                         "HOME=/root",
                         "JAVA_HOME=${javaHome}"]) {
 
-                    git url: scmUrl, credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d', branch: "${scmBranch}"
+                    checkout([
+                            $class: 'GitSCM',
+                            branches: [[
+                                    name: "${scmBranch}"
+                            ]],
+                            doGenerateSubmoduleConfigurations: false,
+                            extensions: [[
+                                    $class: 'LocalBranch',
+                                    localBranch: "${scmBranch}"
+                            ]],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[
+                                    credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d',
+                                    url: "${scmUrl}"
+                            ]]
+                    ])
 
                     // set version
                     sh "mvn -B versions:set -DnewVersion=${c.version.releaseVersion()} -DgenerateBackupPoms=false"
