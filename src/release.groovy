@@ -4,7 +4,7 @@ import groovy.json.JsonSlurper
     node {
         git url: 'git@github.com:gravitee-io/release.git', branch: "master"
         def releaseJSON = readFile encoding: 'UTF-8', file: 'release.json'
-
+        dryRun = Boolean.valueOf(dryRun)
         if (dryRun) {
             println("\n    ##################################" +
                     "\n    #                                #" +
