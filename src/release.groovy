@@ -122,9 +122,9 @@ def releaseMavenProject(components, dryRun) {
                     // use release version of each -SNAPSHOT gravitee artifact
                     sh "mvn -B -U versions:update-properties -Dincludes=io.gravitee.*:* -DgenerateBackupPoms=false"
 
+                    sh "cat pom.xml"
                     // deploy
                     if ( dryRun ) {
-                        sh "cat pom.xml"
                         sh "mvn -B -U clean install"
                     } else {
                         sh "mvn -B -U -P gravitee-release clean deploy"
