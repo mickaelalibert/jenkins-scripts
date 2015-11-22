@@ -92,7 +92,10 @@ def releaseMavenProject(components, dryRun) {
                 def javaHome = tool 'JDK 8'
                 def nodeHome = tool 'NodeJS 0.12.4'
 
-                withEnv(["PATH+MAVEN=${mvnHome}/bin+NODE=${nodeHome}/bin", "HOME=/root", "JAVA_HOME=${javaHome}"]) {
+                withEnv(["PATH+MAVEN=${mvnHome}/bin",
+                        "PATH+NODE=${nodeHome}/bin",
+                        "HOME=/root",
+                        "JAVA_HOME=${javaHome}"]) {
 
                     git url: scmUrl, credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d'
 
