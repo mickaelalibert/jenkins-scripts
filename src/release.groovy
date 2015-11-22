@@ -80,10 +80,12 @@ def releaseMavenProject(components, dryRun) {
 
         parallelBuild[c.name] = {
             def scmUrl = "git@github.com:gravitee-io/${c.name}.git"
+            def scmBranch = "master"
             node {
-                println("\n    scmUrl = ${scmUrl}" +
+                println("\n    scmUrl         = ${scmUrl}" +
+                        "\n    scmBranch      = ${scmBranch}" +
                         "\n    releaseVersion = ${c.version.releaseVersion()}" +
-                        "\n    nextSnapshot = ${c.version.nextMinorSnapshotVersion()}")
+                        "\n    nextSnapshot   = ${c.version.nextMinorSnapshotVersion()}")
 
                 sh 'rm -rf *'
                 sh 'rm -rf .git'
@@ -97,7 +99,7 @@ def releaseMavenProject(components, dryRun) {
                         "HOME=/root",
                         "JAVA_HOME=${javaHome}"]) {
 
-                    git url: scmUrl, credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d'
+                    git url: scmUrl, credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d', branch: "${scmBranch}"
 
                     // set version
                     sh "mvn -B versions:set -DnewVersion=${c.version.releaseVersion()} -DgenerateBackupPoms=false"
@@ -127,7 +129,7 @@ def releaseMavenProject(components, dryRun) {
 
                     // push
                     if ( !dryRun ) {
-                        sh "git push --tags origin ${branch}"
+                        sh "git push --tags origin ${scmBranch}"
                     }
                 }
             }
