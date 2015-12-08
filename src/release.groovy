@@ -97,6 +97,7 @@ def releaseMavenProject(components, dryRun) {
                 withEnv(["PATH+MAVEN=${mvnHome}/bin",
                         "PATH+NODE=${nodeHome}/bin",
                         "HOME=/root",
+                        "M2_HOME=${mvnHome}",
                         "JAVA_HOME=${javaHome}"]) {
 
                     checkout([
@@ -125,6 +126,7 @@ def releaseMavenProject(components, dryRun) {
                     sh "cat pom.xml"
                     // deploy
                     if ( dryRun ) {
+                        sh "mvn enforcer:enforce"
                         sh "mvn -B -U clean install"
                     } else {
                         sh "mvn -B -U -P gravitee-release clean deploy"
