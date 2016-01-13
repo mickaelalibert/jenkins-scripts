@@ -126,8 +126,8 @@ def releaseMavenProject(components, dryRun) {
                     sh "cat pom.xml"
                     // deploy
                     if ( dryRun ) {
-                        sh "mvn enforcer:enforce"
                         sh "mvn -B -U clean install"
+                        sh "mvn enforcer:enforce"
                     } else {
                         sh "mvn -B -U -P gravitee-release clean deploy"
                     }
