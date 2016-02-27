@@ -1,3 +1,5 @@
+package main.groovy
+
 def projects = [
         "gravitee-common",
         "gravitee-definition",
