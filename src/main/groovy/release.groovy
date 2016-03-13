@@ -4,8 +4,8 @@ import groovy.json.JsonSlurper
     node {
         git url: 'git@github.com:gravitee-io/release.git', branch: "master"
         def releaseJSON = readFile encoding: 'UTF-8', file: 'release.json'
-        dryRun = Boolean.valueOf(dryRun)
-        if (dryRun) {
+        dryRunAsBool = Boolean.valueOf(dryRun)
+        if (dryRunAsBool) {
             println("\n    ##################################" +
                     "\n    #                                #" +
                     "\n    #          DRY RUN MODE          #" +
@@ -22,7 +22,7 @@ import groovy.json.JsonSlurper
                 '')
 
         Component[] componentsToRelease = filteredComponentsToRelease(graviteeio)
-        releaseComponents(componentsToRelease, graviteeio.buildDependencies, MavenReleaser, dryRun)
+        releaseComponents(componentsToRelease, graviteeio.buildDependencies, MavenReleaser, dryRunAsBool)
     }
 }()
 
@@ -131,12 +131,12 @@ class Version implements Serializable {
     }
 
     def nextMajorSnapshotVersion() {
-        def v = (major + 1) + "." + minor + "." + fix + "-SNAPSHOT"
+        def v = (major + 1) + ".0.0-SNAPSHOT"
         v
     }
 
     def nextMinorSnapshotVersion() {
-        def v = major + "." + (minor + 1) + "." + fix + "-SNAPSHOT"
+        def v = major + "." + (minor + 1) + ".0-SNAPSHOT"
         v
     }
 
