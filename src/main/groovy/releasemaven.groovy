@@ -53,12 +53,17 @@ def release(components, dryRun) {
                     sh "mvn -B -U versions:update-properties -Dincludes=io.gravitee.*:* -DgenerateBackupPoms=false"
 
                     sh "cat pom.xml"
-                    // deploy
-                    if ( dryRun ) {
-                        sh "mvn -B -U clean install"
-                        sh "mvn enforcer:enforce"
-                    } else {
-                        sh "mvn -B -U -P gravitee-release clean deploy"
+
+                    sh('git rev-parse HEAD > GIT_COMMIT')
+                    git_commit=readFile('GIT_COMMIT')
+                    withEnv(["GIT_COMMIT=${git_commit}"]) {
+                        // deploy
+                        if (dryRun) {
+                            sh "mvn -B -U clean install"
+                            sh "mvn enforcer:enforce"
+                        } else {
+                            sh "mvn -B -U -P gravitee-release clean deploy"
+                        }
                     }
 
                     // commit, tag the release
