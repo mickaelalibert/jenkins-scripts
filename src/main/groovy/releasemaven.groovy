@@ -10,7 +10,7 @@ def release(components, dryRun) {
             def scmUrl = "git@github.com:gravitee-io/${c.name}.git"
             def scmBranch = "master"
             node {
-                stage "release(${dryRun}): ${c.name}"
+                stage "${c.name} v${c.version.releaseVersion()}"
                 println("\n    scmUrl         = ${scmUrl}" +
                         "\n    scmBranch      = ${scmBranch}" +
                         "\n    releaseVersion = ${c.version.releaseVersion()}" +
