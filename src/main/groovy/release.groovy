@@ -131,12 +131,12 @@ class Version implements Serializable {
     }
 
     def nextMajorSnapshotVersion() {
-        def v = (major + 1) + "." + minor + "." + fix + "-SNAPSHOT"
+        def v = (major + 1) + ".0.0-SNAPSHOT"
         v
     }
 
     def nextMinorSnapshotVersion() {
-        def v = major + "." + (minor + 1) + "." + fix + "-SNAPSHOT"
+        def v = major + "." + (minor + 1) + ".0-SNAPSHOT"
         v
     }
 
