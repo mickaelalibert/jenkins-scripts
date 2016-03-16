@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 
 labels_to_add = [
     {
@@ -49,13 +50,13 @@ labels_to_delete = ["bug", "duplicate", "enhancement", "help wanted", "invalid",
 headers = {
     "Content-type": "application/json",
     "Accept": "application/vnd.github.v3+json",
-    "Authorization": "Basic XXXXXXX"
+    "Authorization": os.environ.get('GITHUB_BASIC_TOKEN')
 }
 
 page = 1
 while True:
     r = requests.get('https://api.github.com/orgs/gravitee-io/repos?page=' + str(page), headers=headers)
-    page = page+1
+    page += 1
     if len(r.json()) == 0:
         break
     for repo in r.json():
@@ -74,4 +75,3 @@ while True:
         for label in labels_to_delete:
             delete = requests.delete(url + '/labels/' + label, headers=headers)
             print("DEL " + label + " " + str(delete.status_code))
-com.xebialabs.deployit.booter.remote.execution.RemoteTaskWithBlock
