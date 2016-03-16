@@ -1,4 +1,5 @@
 import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
 
 { ->
     node {
@@ -14,6 +15,7 @@ import groovy.json.JsonSlurper
         }
 
         Graviteeio graviteeio = new Graviteeio(parseJson(releaseJSON))
+
         def MavenReleaser = fileLoader.fromGit(
                 'src/main/groovy/releasemaven',
                 'https://github.com/gravitee-io/jenkins-scripts.git',
@@ -21,8 +23,8 @@ import groovy.json.JsonSlurper
                 null,
                 '')
 
-        Component[] componentsToRelease = filteredComponentsToRelease(graviteeio)
-        releaseComponents(componentsToRelease, graviteeio.buildDependencies, MavenReleaser, dryRunAsBool)
+        Component[] componentsToRelease = filteredComponentsToRelease(graviteeio, dryRunAsBool)
+        releaseComponents(graviteeio, componentsToRelease, graviteeio.buildDependencies, MavenReleaser, dryRunAsBool)
     }
 }()
 
@@ -33,7 +35,12 @@ def parseJson(json) {
     obj
 }
 
-def filteredComponentsToRelease(Graviteeio graviteeIO) {
+@NonCPS
+def toJson(graviteeio) {
+    JsonOutput.prettyPrint(JsonOutput.toJson(graviteeio))
+}
+
+def filteredComponentsToRelease(Graviteeio graviteeIO, dryRun) {
     def snapshots = []
     def snapshotsPrintList = "\n"
     for ( int i = 0; i < graviteeIO.components.size(); i++ ) {
@@ -49,7 +56,7 @@ def filteredComponentsToRelease(Graviteeio graviteeIO) {
     snapshots
 }
 
-def releaseComponents(componentsToRelease, buildDependencies, MavenReleaser, dryRun) {
+def releaseComponents(graviteeio, componentsToRelease, buildDependencies, MavenReleaser, dryRun) {
     if ( componentsToRelease == null || componentsToRelease.size() == 0 )
         return
 
@@ -71,23 +78,103 @@ def releaseComponents(componentsToRelease, buildDependencies, MavenReleaser, dry
         }
     }
 
-    for ( int i = 0; i < parallelBuildGroup.size(); i++ ) {
-        MavenReleaser.release(parallelBuildGroup[i], dryRun)
+    boolean updateReleaseJsonFile = false
+    boolean releaseReleaseJsonFile = true
+    try {
+        for (int i = 0; i < parallelBuildGroup.size(); i++) {
+            def mavenRelease = MavenReleaser.release(parallelBuildGroup[i], dryRun)
+
+            if (mavenRelease.componentsReleased.size() > 0) {
+                updateReleaseJsonFile = true
+                graviteeio.updateComponents(mavenRelease.componentsReleased)
+            }
+            if (mavenRelease.errors.size() > 0) {
+                releaseReleaseJsonFile = false
+                throw mavenRelease.errors[0]
+            }
+        }
+    } finally {
+        def JSONReleaser = fileLoader.fromGit(
+                'src/main/groovy/releasejson',
+                'https://github.com/gravitee-io/jenkins-scripts.git',
+                'master',
+                null,
+                '')
+        graviteeio.buildTimestamp = new Date()
+        def tag  = null
+
+        if (releaseReleaseJsonFile) {
+            tag = graviteeio.version.releaseVersion()
+            graviteeio.version = new Version(graviteeio.version.releaseVersion())
+        }
+
+        if(updateReleaseJsonFile) {
+            JSONReleaser.updateReleaseJson(toJson(graviteeio.toJsonObject()), tag, dryRun)
+        }
+
+        if (releaseReleaseJsonFile) {
+            graviteeio.version = new Version(graviteeio.version.nextMinorSnapshotVersion())
+            JSONReleaser.updateReleaseJson(toJson(graviteeio.toJsonObject()), null, dryRun)
+        }
     }
 }
 
 
 class Graviteeio implements Serializable {
+    def name
+    def scmSshUrl
+    def scmHttpUrl
+    def buildTimestamp
     Version version
     def components = []
     String[][] buildDependencies
 
     Graviteeio(jsonObj) {
+        this.name = jsonObj.name
+        this.scmHttpUrl = jsonObj.scmHttpUrl
+        this.scmSshUrl = jsonObj.scmSshUrl
+        this.buildTimestamp = jsonObj.buildTimestamp
         this.version = new Version(jsonObj.version)
         this.buildDependencies = jsonObj.buildDependencies
         if ( jsonObj.components ) {
             for ( int i = 0; i < jsonObj.components.size(); i++ ) {
                 components.add(new Component(jsonObj.components[i]))
+            }
+        }
+    }
+
+    def toJsonObject() {
+        [
+                name: this.name,
+                version: this.version.getVersion(),
+                buildTimestamp: this.buildTimestamp,
+                scmSshUrl: this.scmSshUrl,
+                scmHttpUrl: this.scmHttpUrl,
+                components: this.getComponentsAsJson(),
+                buildDependencies: this.buildDependencies
+        ]
+    }
+
+    def getComponentsAsJson() {
+        def componentsAsJson = []
+
+        for(int i = 0; i < components.size(); i++) {
+            componentsAsJson.add([
+                name: components[i].name,
+                version: components[i].version.getVersion()
+            ])
+        }
+
+        componentsAsJson
+    }
+
+    def updateComponents(updatedComponents) {
+        for ( int i = 0; i < updatedComponents.size(); i++ ) {
+            for ( int j = 0; j < components.size(); j++ ) {
+                if (updatedComponents[i].name.equals(components[j].name)){
+                    components[j].version = new Version(updatedComponents[i].version.releaseVersion())
+                    break
+                }
             }
         }
     }

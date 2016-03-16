@@ -1,4 +1,5 @@
-def release(components, dryRun) {
+def release(components, boolean dryRun) {
+    def result = [componentsReleased:[], errors: []]
     def componentListToPrint = ""
     def parallelBuild = [:]
 
@@ -22,7 +23,6 @@ def release(components, dryRun) {
                 def mvnHome = tool 'Maven 3.2.2'
                 def javaHome = tool 'JDK 8'
                 def nodeHome = tool 'NodeJS 0.12.4'
-
                 withEnv(["PATH+MAVEN=${mvnHome}/bin",
                         "PATH+NODE=${nodeHome}/bin",
                         "HOME=/root",
@@ -30,20 +30,20 @@ def release(components, dryRun) {
                         "JAVA_HOME=${javaHome}"]) {
 
                     checkout([
-                            $class: 'GitSCM',
-                            branches: [[
-                                    name: "${scmBranch}"
-                            ]],
+                            $class                           : 'GitSCM',
+                            branches                         : [[
+                                                                        name: "${scmBranch}"
+                                                                ]],
                             doGenerateSubmoduleConfigurations: false,
-                            extensions: [[
-                                    $class: 'LocalBranch',
-                                    localBranch: "${scmBranch}"
-                            ]],
-                            submoduleCfg: [],
-                            userRemoteConfigs: [[
-                                    credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d',
-                                    url: "${scmUrl}"
-                            ]]
+                            extensions                       : [[
+                                                                        $class     : 'LocalBranch',
+                                                                        localBranch: "${scmBranch}"
+                                                                ]],
+                            submoduleCfg                     : [],
+                            userRemoteConfigs                : [[
+                                                                        credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d',
+                                                                        url          : "${scmUrl}"
+                                                                ]]
                     ])
 
                     // set version
@@ -54,8 +54,9 @@ def release(components, dryRun) {
 
                     sh "cat pom.xml"
 
-                    sh('git rev-parse HEAD > GIT_COMMIT')
-                    git_commit=readFile('GIT_COMMIT')
+                    sh "git rev-parse HEAD > GIT_COMMIT"
+                    def git_commit = readFile encoding: 'UTF-8', file: 'GIT_COMMIT'
+
                     withEnv(["GIT_COMMIT=${git_commit}"]) {
                         // deploy
                         if (dryRun) {
@@ -83,12 +84,20 @@ def release(components, dryRun) {
                         sh "git push --tags origin ${scmBranch}"
                     }
                 }
+                result.componentsReleased.add(c)
             }
         }
     }
 
-    println("    Release ${components.size()} components in parallel : ${componentListToPrint} \n")
-    parallel parallelBuild
+    try {
+        println("    Release ${components.size()} components in parallel : ${componentListToPrint} \n")
+        parallel parallelBuild
+    } catch(err) {
+        echo "Exception thrown:\n ${err}"
+        result.errors.add(err)
+    } finally {
+        return result
+    }
 
 }
 
