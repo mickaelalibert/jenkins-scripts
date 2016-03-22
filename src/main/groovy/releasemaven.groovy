@@ -59,10 +59,10 @@ def release(components, dryRun) {
                     withEnv(["GIT_COMMIT=${git_commit}"]) {
                         // deploy
                         if (dryRun) {
-                            sh "mvn -B -U -T 1C clean install"
+                            sh "mvn -B -U clean install"
                             sh "mvn enforcer:enforce"
                         } else {
-                            sh "mvn -B -U -P -T 1C gravitee-release clean deploy"
+                            sh "mvn -B -U -P gravitee-release clean deploy"
                         }
                     }
 
