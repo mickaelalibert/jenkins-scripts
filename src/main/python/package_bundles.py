@@ -218,6 +218,7 @@ def prepare_policies(version):
     policies_dist_path = "%s/dist/graviteeio-policies-%s" % (tmp_path, version)
     os.makedirs(policies_dist_path, exist_ok=True)
     copy_files_into(policies_path, policies_dist_path)
+    copy_files_into(services_path, policies_dist_path)
 
 
 def package(version):
