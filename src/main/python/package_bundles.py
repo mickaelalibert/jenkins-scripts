@@ -195,7 +195,6 @@ def prepare_gateway_bundle(gateway):
     copy_files_into(reporters_path, bundle_path + "plugins")
     copy_files_into(services_path, bundle_path + "plugins")
 
-
 def prepare_ui_bundle(ui):
     print("==================================")
     print("Prepare %s" % ui)
@@ -215,7 +214,7 @@ def prepare_mgmt_bundle(mgmt):
 def prepare_policies(version):
     print("==================================")
     print("Prepare Policies")
-    policies_dist_path = "%s/dist/graviteeio-policies-%s" % (tmp_path, version)
+    policies_dist_path = "%s/dist/gravitee-policies-%s" % (tmp_path, version)
     os.makedirs(policies_dist_path, exist_ok=True)
     copy_files_into(policies_path, policies_dist_path)
     copy_files_into(services_path, policies_dist_path)
@@ -225,10 +224,12 @@ def package(version):
     print("==================================")
     print("Packaging")
     packages = []
+    exclude_from_full_zip_list = [re.compile(".*graviteeio-policies.*")]
     full_zip_name = "graviteeio-full-%s" % version
     full_zip_path = "%s/dist/%s.zip" % (tmp_path, full_zip_name)
     dirs = [os.path.join("%s/dist/" % tmp_path, fn) for fn in next(os.walk("%s/dist/" % tmp_path))[1]]
     with zipfile.ZipFile(full_zip_path, "w", zipfile.ZIP_STORED) as full_zip:
+        print("Create %s" % full_zip_path)
         packages.append(full_zip_path)
         for dir in dirs:
             with zipfile.ZipFile("%s.zip" % dir, "w", zipfile.ZIP_STORED) as bundle_zip:
@@ -237,16 +238,23 @@ def package(version):
                 dir_abs_path = os.path.abspath(dir)
                 dir_name = os.path.split(dir_abs_path)[1]
                 for dirname, subdirs, files in os.walk(dir_abs_path):
+                    exclude_from_full_zip = False
+                    for pattern in exclude_from_full_zip_list:
+                        if pattern.match(dir):
+                            exclude_from_full_zip = True
+                            break
                     for filename in files:
                         absname = os.path.abspath(os.path.join(dirname, filename))
                         arcname = absname[len(dir_abs_path) - len(dir_name):]
                         bundle_zip.write(absname, arcname)
-                        full_zip.write(absname, "%s/%s" % (full_zip_name, arcname))
+                        if exclude_from_full_zip is False:
+                            full_zip.write(absname, "%s/%s" % (full_zip_name, arcname))
                     if len(files) == 0:
                         absname = os.path.abspath(dirname)
                         arcname = absname[len(dir_abs_path) - len(dir_name):]
                         bundle_zip.write(absname, arcname)
-                        full_zip.write(absname, "%s/%s" % (full_zip_name, arcname))
+                        if exclude_from_full_zip is False:
+                            full_zip.write(absname, "%s/%s" % (full_zip_name, arcname))
     return packages
 
 
