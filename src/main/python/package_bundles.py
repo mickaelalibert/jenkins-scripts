@@ -227,10 +227,10 @@ def package(version):
     full_zip_name = "graviteeio-full-%s" % version
     full_zip_path = "%s/dist/%s.zip" % (tmp_path, full_zip_name)
     dirs = [os.path.join("%s/dist/" % tmp_path, fn) for fn in next(os.walk("%s/dist/" % tmp_path))[1]]
-    with zipfile.ZipFile(full_zip_path, "w", zipfile.ZIP_DEFLATED) as full_zip:
+    with zipfile.ZipFile(full_zip_path, "w", zipfile.ZIP_STORED) as full_zip:
         packages.append(full_zip_path)
         for dir in dirs:
-            with zipfile.ZipFile("%s.zip" % dir, "w", zipfile.ZIP_DEFLATED) as bundle_zip:
+            with zipfile.ZipFile("%s.zip" % dir, "w", zipfile.ZIP_STORED) as bundle_zip:
                 print("Create %s.zip" % dir)
                 packages.append("%s.zip" % dir)
                 dir_abs_path = os.path.abspath(dir)
