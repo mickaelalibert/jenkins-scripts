@@ -60,7 +60,11 @@ def get_reporters(release_json):
 
 
 def get_repositories(release_json):
-    return [get_component_by_name(release_json, "gravitee-repository-mongodb")]
+    components_name = ["gravitee-repository-mongodb", "gravitee-repository-ehcache"]
+    repositories = []
+    for component_name in components_name:
+        repositories.append(get_component_by_name(release_json, component_name))
+    return repositories
 
 
 def get_services(release_json):
@@ -80,7 +84,6 @@ def get_component_by_name(release_json, component_name):
     search_pattern = re.compile(component_name)
     for component in components:
         if search_pattern.match(component['name']):
-
             return component
 
 
@@ -137,8 +140,9 @@ def copy_files_into(src_dir, dest_dir):
 def download_policies(policies):
     paths = []
     for policy in policies:
-        url = get_download_url("io.gravitee.policy", policy['name'], policy['version'], "zip")
-        paths.append(download(policy['name'], '%s/%s-%s.zip' % (policies_path, policy['name'], policy['version']), url))
+        if policy['name'] != "gravitee-policy-core":
+            url = get_download_url("io.gravitee.policy", policy['name'], policy['version'], "zip")
+            paths.append(download(policy['name'], '%s/%s-%s.zip' % (policies_path, policy['name'], policy['version']), url))
     return paths
 
 
@@ -173,16 +177,21 @@ def download_reporters(reporters):
     for reporter in reporters:
         url = get_download_url("io.gravitee.reporter", reporter['name'], reporter['version'], "zip")
         paths.append(
-                download(reporter['name'], '%s/%s-%s.zip' % (reporters_path, reporter['name'], reporter['version']),
-                         url))
+            download(reporter['name'],
+                     '%s/%s-%s.zip' % (reporters_path, reporter['name'], reporter['version']),
+                     url))
     return paths
 
 
 def download_repositories(repositories):
+    paths = []
     for repository in repositories:
         url = get_download_url("io.gravitee.repository", repository['name'], repository['version'], "zip")
-        return download(repository['name'],
-                        '%s/%s-%s.zip' % (repositories_path, repository['name'], repository['version']), url)
+        paths.append(
+             download(repository['name'],
+                      '%s/%s-%s.zip' % (repositories_path, repository['name'], repository['version']),
+                      url))
+    return paths
 
 
 def prepare_gateway_bundle(gateway):
