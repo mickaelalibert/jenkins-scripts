@@ -35,10 +35,9 @@ import groovy.json.JsonSlurper
 
         writeFile file: 'release.properties', text: releasejson_as_properties
 
-        def mvnHome = tool 'Maven 3.2.2'
+        def mvnHome = tool 'MVN33'
         def javaHome = tool 'JDK 8'
         withEnv(["PATH+MAVEN=${mvnHome}/bin",
-                 "HOME=/root",
                  "M2_HOME=${mvnHome}",
                  "JAVA_HOME=${javaHome}"]) {
 
