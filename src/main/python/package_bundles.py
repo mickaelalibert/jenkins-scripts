@@ -1,7 +1,6 @@
 import os
 import re
 import shutil
-import stat
 import zipfile
 from tqdm import tqdm
 import requests
@@ -19,7 +18,7 @@ reporters_path = "%s/reporters" % tmp_path
 repositories_path = "%s/repositories" % tmp_path
 snapshotPattern = re.compile('.*-SNAPSHOT')
 
-#BINTRAY
+# BINTRAY
 publish_to_bintray = True if os.environ.get('PUBLISH_TO_BINTRAY') == "true" else False
 bintray_packages_url = "https://api.bintray.com/packages/gravitee-io/release/distribution"
 bintray_content_url = "https://api.bintray.com/content/gravitee-io/release/distribution"
@@ -28,6 +27,7 @@ bintray_headers = {
     "Content-type": "application/json",
     "Authorization": os.environ.get('BINTRAY_BASIC_TOKEN')
 }
+
 
 def clean():
     if os.path.exists(tmp_path):
@@ -87,9 +87,9 @@ def get_component_by_name(release_json, component_name):
             return component
 
 
-def get_download_url(groupid, artifactid, version, type):
+def get_download_url(group_id, artifact_id, version, t):
     return "https://oss.sonatype.org/service/local/artifact/maven/redirect?r=%s&g=%s&a=%s&v=%s&e=%s" % (
-        ("snapshots" if snapshotPattern.match(version) else "releases"), groupid, artifactid, version, type)
+        ("snapshots" if snapshotPattern.match(version) else "releases"), group_id, artifact_id, version, t)
 
 
 def download(name, filename_path, url):
@@ -113,11 +113,11 @@ def unzip(files):
     return sorted(unzip_dirs)
 
 
-def preserve_permissions(dir):
+def preserve_permissions(d):
     search_bin_pattern = re.compile(".*/bin$")
     search_gravitee_pattern = re.compile("gravitee(\.bat)?")
     perm = 0o0755
-    for dirname, subdirs, files in os.walk(dir):
+    for dirname, subdirs, files in os.walk(d):
         if search_bin_pattern.match(dirname):
             for file in files:
                 if search_gravitee_pattern.match(file):
@@ -126,14 +126,25 @@ def preserve_permissions(dir):
                     os.chmod(file_path, perm)
 
 
-
-def copy_files_into(src_dir, dest_dir):
+def copy_files_into(src_dir, dest_dir, exclude_pattern=None):
+    if exclude_pattern is None:
+        exclude_pattern = []
     filenames = [os.path.join(src_dir, fn) for fn in next(os.walk(src_dir))[2]]
+
     print("        copy")
     print("            %s" % filenames)
     print("        into")
     print("            %s" % dest_dir)
     for file in filenames:
+        to_exclude = False
+        for pattern in exclude_pattern:
+            search_pattern = re.compile(pattern)
+            if search_pattern.match(file):
+                to_exclude = True
+                break
+        if to_exclude:
+            print("[INFO] %s is excluded from files." % file)
+            continue
         copy2(file, dest_dir)
 
 
@@ -142,7 +153,8 @@ def download_policies(policies):
     for policy in policies:
         if policy['name'] != "gravitee-policy-core":
             url = get_download_url("io.gravitee.policy", policy['name'], policy['version'], "zip")
-            paths.append(download(policy['name'], '%s/%s-%s.zip' % (policies_path, policy['name'], policy['version']), url))
+            paths.append(
+                download(policy['name'], '%s/%s-%s.zip' % (policies_path, policy['name'], policy['version']), url))
     return paths
 
 
@@ -163,7 +175,7 @@ def download_services(services):
     for service in services:
         url = get_download_url("io.gravitee.policy", service['name'], service['version'], "zip")
         paths.append(
-                download(service['name'], '%s/%s-%s.zip' % (services_path, service['name'], service['version']), url))
+            download(service['name'], '%s/%s-%s.zip' % (services_path, service['name'], service['version']), url))
     return paths
 
 
@@ -188,9 +200,9 @@ def download_repositories(repositories):
     for repository in repositories:
         url = get_download_url("io.gravitee.repository", repository['name'], repository['version'], "zip")
         paths.append(
-             download(repository['name'],
-                      '%s/%s-%s.zip' % (repositories_path, repository['name'], repository['version']),
-                      url))
+            download(repository['name'],
+                     '%s/%s-%s.zip' % (repositories_path, repository['name'], repository['version']),
+                     url))
     return paths
 
 
@@ -203,6 +215,7 @@ def prepare_gateway_bundle(gateway):
     copy_files_into(repositories_path, bundle_path + "plugins")
     copy_files_into(reporters_path, bundle_path + "plugins")
     copy_files_into(services_path, bundle_path + "plugins")
+
 
 def prepare_ui_bundle(ui):
     print("==================================")
@@ -217,7 +230,7 @@ def prepare_mgmt_bundle(mgmt):
     bundle_path = unzip([mgmt])[0]
     print("        bundle_path: %s" % bundle_path)
     copy_files_into(policies_path, bundle_path + "plugins")
-    copy_files_into(repositories_path, bundle_path + "plugins")
+    copy_files_into(repositories_path, bundle_path + "plugins", [".*gravitee-repository-ehcache.*"])
 
 
 def prepare_policies(version):
@@ -240,16 +253,16 @@ def package(version):
     with zipfile.ZipFile(full_zip_path, "w", zipfile.ZIP_STORED) as full_zip:
         print("Create %s" % full_zip_path)
         packages.append(full_zip_path)
-        for dir in dirs:
-            with zipfile.ZipFile("%s.zip" % dir, "w", zipfile.ZIP_STORED) as bundle_zip:
-                print("Create %s.zip" % dir)
-                packages.append("%s.zip" % dir)
-                dir_abs_path = os.path.abspath(dir)
+        for d in dirs:
+            with zipfile.ZipFile("%s.zip" % d, "w", zipfile.ZIP_STORED) as bundle_zip:
+                print("Create %s.zip" % d)
+                packages.append("%s.zip" % d)
+                dir_abs_path = os.path.abspath(d)
                 dir_name = os.path.split(dir_abs_path)[1]
                 for dirname, subdirs, files in os.walk(dir_abs_path):
                     exclude_from_full_zip = False
                     for pattern in exclude_from_full_zip_list:
-                        if pattern.match(dir):
+                        if pattern.match(d):
                             exclude_from_full_zip = True
                             break
                     for filename in files:
@@ -267,8 +280,8 @@ def package(version):
     return packages
 
 
-def rename(str):
-    return str.replace("gravitee", "graviteeio") \
+def rename(string):
+    return string.replace("gravitee", "graviteeio") \
         .replace("management-standalone", "management-api") \
         .replace("management-webui", "management-ui") \
         .replace("standalone-", "")
@@ -278,17 +291,18 @@ def clean_dir_names():
     print("==================================")
     print("Clean directory names")
     dirs = [os.path.join("%s/dist/" % tmp_path, fn) for fn in next(os.walk("%s/dist/" % tmp_path))[1]]
-    for dir in dirs:
-        os.rename(dir, rename(dir))
+    for d in dirs:
+        os.rename(d, rename(d))
 
 
 def send_to_bintray(nightlybuild, version, packages):
     print("==================================")
     bintray_version = create_bintray_version(nightlybuild, version)
-    for package in packages:
-        file = open(package, 'rb')
+    for p in packages:
+        file = open(p, 'rb')
         files = {'file': file}
-        url = "%s/%s/%s/%s?publish=1" % (bintray_content_url, bintray_version, bintray_version, file.name.rpartition("/")[2])
+        url = "%s/%s/%s/%s?publish=1" % (
+            bintray_content_url, bintray_version, bintray_version, file.name.rpartition("/")[2])
         print(url)
         r = requests.put(url, files=files, headers=bintray_headers)
         response_pretty_print(r)
@@ -334,7 +348,8 @@ def update_bintray_download_list(nightlybuild, version, packages):
             break
     print("BINTRAY - update download list : %s" % full_zip)
     payload = {"list_in_downloads": True}
-    r = requests.put("%s/%s/%s" % (bintray_metadata_url, bintray_version, full_zip), json=payload, headers=bintray_headers)
+    r = requests.put("%s/%s/%s" % (bintray_metadata_url, bintray_version, full_zip), json=payload,
+                     headers=bintray_headers)
     response_pretty_print(r)
 
 
@@ -380,5 +395,6 @@ def main():
     if publish_to_bintray:
         send_to_bintray(is_latest_param, version, packages)
         update_bintray_download_list(is_latest_param, version, packages)
+
 
 main()

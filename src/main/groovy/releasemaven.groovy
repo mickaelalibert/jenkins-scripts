@@ -11,7 +11,7 @@ def release(components, boolean dryRun) {
             def scmUrl = "git@github.com:gravitee-io/${c.name}.git"
             def scmBranch = "master"
             node {
-                stage "${c.name} v${c.version.releaseVersion()}"
+                //stage "${c.name} v${c.version.releaseVersion()}"
                 println("\n    scmUrl         = ${scmUrl}" +
                         "\n    scmBranch      = ${scmBranch}" +
                         "\n    releaseVersion = ${c.version.releaseVersion()}" +
@@ -20,12 +20,11 @@ def release(components, boolean dryRun) {
                 sh 'rm -rf *'
                 sh 'rm -rf .git'
 
-                def mvnHome = tool 'Maven 3.2.2'
+                def mvnHome = tool 'MVN33'
                 def javaHome = tool 'JDK 8'
                 def nodeHome = tool 'NodeJS 0.12.4'
                 withEnv(["PATH+MAVEN=${mvnHome}/bin",
                         "PATH+NODE=${nodeHome}/bin",
-                        "HOME=/root",
                         "M2_HOME=${mvnHome}",
                         "JAVA_HOME=${javaHome}"]) {
 
@@ -91,6 +90,7 @@ def release(components, boolean dryRun) {
 
     try {
         println("    Release ${components.size()} components in parallel : ${componentListToPrint} \n")
+        stage "Release ${components.size()} components"
         parallel parallelBuild
     } catch(err) {
         echo "Exception thrown:\n ${err}"
