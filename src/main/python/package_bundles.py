@@ -60,7 +60,11 @@ def get_reporters(release_json):
 
 
 def get_repositories(release_json):
-    components_name = ["gravitee-repository-mongodb", "gravitee-repository-ehcache"]
+    components_name = [
+        "gravitee-repository-mongodb",
+        "gravitee-repository-ehcache",
+        "gravitee-repository-elasticsearch"
+    ]
     repositories = []
     for component_name in components_name:
         repositories.append(get_component_by_name(release_json, component_name))
@@ -212,7 +216,7 @@ def prepare_gateway_bundle(gateway):
     bundle_path = unzip([gateway])[0]
     print("        bundle_path: %s" % bundle_path)
     copy_files_into(policies_path, bundle_path + "plugins")
-    copy_files_into(repositories_path, bundle_path + "plugins")
+    copy_files_into(repositories_path, bundle_path + "plugins", [".*gravitee-repository-elasticsearch.*"])
     copy_files_into(reporters_path, bundle_path + "plugins")
     copy_files_into(services_path, bundle_path + "plugins")
 
