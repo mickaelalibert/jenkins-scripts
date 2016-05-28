@@ -1,8 +1,0 @@
-normalize_github_labels:
-  image: graviteeio/python:3
-  environment:
-    - GITHUB_BASIC_TOKEN
-  volumes:
-    - ./../../../:/usr/src/myapp
-  working_dir: /usr/src/myapp
-  command: ["python", "./src/main/python/normalize_github_labels.py"]
