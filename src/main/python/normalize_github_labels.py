@@ -24,14 +24,6 @@ labels_to_add = [
         "color": "009800"
     },
     {
-        "name": "release: 0.6.0",
-        "color": "fbca04"
-    },
-    {
-        "name": "release: 0.7.0",
-        "color": "fbca04"
-    },
-    {
         "name": "status: in progress",
         "color": "0052cc"
     },
