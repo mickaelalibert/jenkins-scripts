@@ -10,7 +10,7 @@ def release(components, boolean dryRun) {
         parallelBuild[c.name] = {
             def scmUrl = "git@github.com:gravitee-io/${c.name}.git"
             def scmBranch = "master"
-            node {
+            node() {
                 //stage "${c.name} v${c.version.releaseVersion()}"
                 println("\n    scmUrl         = ${scmUrl}" +
                         "\n    scmBranch      = ${scmBranch}" +

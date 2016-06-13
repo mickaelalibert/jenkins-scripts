@@ -1,70 +1,61 @@
-package main.groovy
+import groovy.json.JsonSlurper
 
-def projects = [
-        "gravitee-common",
-        "gravitee-definition",
-        "gravitee-plugin-core",
+node() {
+    git url: 'git@github.com:gravitee-io/release.git', branch: "master"
+    def releaseJSON = readFile encoding: 'UTF-8', file: 'release.json'
+    def jsonObj = parseJson(releaseJSON)
+    def parallelBuild = [:]
 
-        "gravitee-repository",
-        "gravitee-repository-jpa",
-        "gravitee-repository-mongodb",
+    for ( int i = 0; i < jsonObj.components.size(); i++ ) {
+        def name = jsonObj.components[i].name
+        def scmUrl = "git@github.com:gravitee-io/${name}.git"
+        parallelBuild[name] = {
+            node {
 
-        "gravitee-gateway",
-
-        "gravitee-policy-apikey",
-        "gravitee-policy-cors",
-        "gravitee-policy-ratelimit",
-
-        "gravitee-reporter-es",
-        "gravitee-reporter-file",
-
-        "gravitee-management-rest-api",
-        "gravitee-management-webui",
-
-        "gravitee-policy-maven-archetype",
-        "json-schema-generator-maven-plugin",
-        "gravitee-oauth2-server"
-]
-
-def updaters = [:]
-
-for (int i = 0; i < projects.size(); i++) {
-    def project = projects[i]
-    updaters[project] = {
-        node {
-            dir (project) {
-                def scmUrl = "git@github.com:gravitee-io/${project}.git"
-                echo ( "\nChange parent version of ${project} to ${PARENT_VERSION}\nSCM: ${scmUrl} \n")
+            }
+            //echo ( "\nChange parent version of ${name} to ${PARENT_VERSION}\nSCM: ${scmUrl} \n")
+            /*ws {
                 sh 'rm -rf *'
                 sh 'rm -rf .git'
 
                 checkout([
-                        $class: 'GitSCM',
-                        branches: [[name: BRANCH]],
+                        $class                           : 'GitSCM',
+                        branches                         : [[
+                                                                    name: "master"
+                                                            ]],
                         doGenerateSubmoduleConfigurations: false,
-                        extensions: [
-                                [$class: 'CleanBeforeCheckout'],
-                                [$class: 'LocalBranch', localBranch: BRANCH ]],
-                        submoduleCfg: [],
-                        userRemoteConfigs: [[
-                                credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d',
-                                url: scmUrl ]]
-                        ])
+                        extensions                       : [[
+                                                                    $class     : 'LocalBranch',
+                                                                    localBranch: "master"
+                                                            ]],
+                        submoduleCfg                     : [],
+                        userRemoteConfigs                : [[
+                                                                    credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d',
+                                                                    url          : "${scmUrl}"
+                                                            ]]
+                ])
 
-                def mvnHome = tool 'Maven 3.2.2'
+                def mvnHome = tool 'MVN33'
+                def javaHome = tool 'JDK 8'
+                withEnv(["PATH+MAVEN=${mvnHome}/bin",
+                         "M2_HOME=${mvnHome}",
+                         "JAVA_HOME=${javaHome}"]) {
+                    sh "mvn -B versions:update-parent -DparentVersion=${PARENT_VERSION} -DgenerateBackupPoms=false"
 
-                // set version
-                sh "${mvnHome}/bin/mvn -B versions:update-parent -DparentVersion=${PARENT_VERSION} -DgenerateBackupPoms=false"
-
-                withEnv(['HOME=/root']) {
                     sh "git add --update"
                     sh "git commit -m 'updateParent(${PARENT_VERSION})'"
                     // push
-                    sh "git push origin ${BRANCH}"
+                    sh "git push origin master"
                 }
-            }
+            }*/
         }
     }
+    parallel parallelBuild
 }
 
-parallel updaters
+@NonCPS
+def parseJson(json) {
+    def jsonSlurper = new JsonSlurper()
+    def obj = jsonSlurper.parseText(json)
+    obj
+}

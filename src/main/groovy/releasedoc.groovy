@@ -1,11 +1,11 @@
 import groovy.json.JsonSlurper
 { ->
-    node {
+    node() {
         docBranch = DOC_BRANCH
         releaseJsonBranchOrTag = "master".equals(RELEASEJSON_BRANCH_OR_TAG) ? "master" : "refs/tags/${RELEASEJSON_BRANCH_OR_TAG}"
         docReleaseVersion = DOC_RELEASE_VERSION
         docReleaseNextSnapshot = DOC_RELEASE_NEXT_SNAPSHOT
-        ws {
+        ws() {
             checkout([
                     $class                           : 'GitSCM',
                     branches                         : [[name: "${releaseJsonBranchOrTag}"]],
