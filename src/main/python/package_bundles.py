@@ -14,6 +14,7 @@ is_latest_param = True if version_param == "master" else False
 m2repo_path = '/m2repo'
 tmp_path = './tmp/%s' % version_param
 policies_path = "%s/policies" % tmp_path
+resources_path = "%s/resources" % tmp_path
 services_path = "%s/services" % tmp_path
 reporters_path = "%s/reporters" % tmp_path
 repositories_path = "%s/repositories" % tmp_path
@@ -35,6 +36,7 @@ def clean():
         shutil.rmtree(tmp_path)
     os.makedirs(tmp_path, exist_ok=True)
     os.makedirs(policies_path, exist_ok=True)
+    os.makedirs(resources_path, exist_ok=True)
     os.makedirs(services_path, exist_ok=True)
     os.makedirs(reporters_path, exist_ok=True)
     os.makedirs(repositories_path, exist_ok=True)
@@ -48,6 +50,16 @@ def get_policies(release_json):
         if search_pattern.match(component['name']) and 'gravitee-policy-api' != component['name']:
             policies.append(component)
     return policies
+
+
+def get_resources(release_json):
+    components = release_json['components']
+    search_pattern = re.compile('gravitee-resource-.*')
+    resources = []
+    for component in components:
+        if search_pattern.match(component['name']) and 'gravitee-resource-api' != component['name']:
+            resources.append(component)
+    return resources
 
 
 def get_reporters(release_json):
@@ -179,6 +191,15 @@ def download_gateway(gateway):
     return download(gateway['name'], '%s/%s-%s.zip' % (tmp_path, gateway['name'], gateway['version']), url)
 
 
+def download_resources(resources):
+    paths = []
+    for resource in resources:
+        url = get_download_url("io.gravitee.resource", resource['name'], resource['version'], "zip")
+        paths.append(
+            download(resource['name'], '%s/%s-%s.zip' % (resources_path, resource['name'], resource['version']), url))
+    return paths
+
+
 def download_services(services):
     paths = []
     for service in services:
@@ -221,6 +242,7 @@ def prepare_gateway_bundle(gateway):
     bundle_path = unzip([gateway])[0]
     print("        bundle_path: %s" % bundle_path)
     copy_files_into(policies_path, bundle_path + "plugins")
+    copy_files_into(resources_path, bundle_path + "plugins")
     copy_files_into(repositories_path, bundle_path + "plugins", [".*gravitee-repository-elasticsearch.*"])
     copy_files_into(reporters_path, bundle_path + "plugins")
     copy_files_into(services_path, bundle_path + "plugins")
@@ -239,6 +261,7 @@ def prepare_mgmt_bundle(mgmt):
     bundle_path = unzip([mgmt])[0]
     print("        bundle_path: %s" % bundle_path)
     copy_files_into(policies_path, bundle_path + "plugins")
+    copy_files_into(resources_path, bundle_path + "plugins")
     copy_files_into(repositories_path, bundle_path + "plugins", [".*gravitee-repository-ehcache.*"])
 
 
@@ -390,6 +413,7 @@ def main():
     ui = download_ui(get_component_by_name(release_json, "gravitee-management-webui"))
     gateway = download_gateway(get_component_by_name(release_json, "gravitee-gateway"))
     download_policies(get_policies(release_json))
+    download_resources(get_resources(release_json))
     download_services(get_services(release_json))
     download_reporters(get_reporters(release_json))
     download_repositories(get_repositories(release_json))
