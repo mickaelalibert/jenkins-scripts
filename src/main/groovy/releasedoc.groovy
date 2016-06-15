@@ -41,6 +41,7 @@ import groovy.json.JsonSlurper
                  "M2_HOME=${mvnHome}",
                  "JAVA_HOME=${javaHome}"]) {
 
+            stage "Build"
             if ( !"".equals(docReleaseVersion) ) {
                 sh "mvn -B versions:set -DnewVersion=${docReleaseVersion} -DgenerateBackupPoms=false"
             }
@@ -55,6 +56,16 @@ import groovy.json.JsonSlurper
             } else {
                 sh "git commit -m 'update release.properties'"
             }
+
+
+            if ( !"".equals(docReleaseVersion) ) {
+                stage "Docker Build & Push"
+
+                sh "docker build -t graviteeio/docs:latest -t graviteeio/docs:${docReleaseVersion} --pull=true ."
+                sh "docker push graviteeio/docs:${docReleaseVersion}"
+                sh "docker push graviteeio/docs:latest"
+            }
+
 
             if ( !"".equals(docReleaseNextSnapshot) ) {
                 sh "mvn -B versions:set -DnewVersion=${docReleaseNextSnapshot} -DgenerateBackupPoms=false"
