@@ -15,6 +15,7 @@ m2repo_path = '/m2repo'
 tmp_path = './tmp/%s' % version_param
 policies_path = "%s/policies" % tmp_path
 resources_path = "%s/resources" % tmp_path
+fetchers_path = "%s/fetchers" % tmp_path
 services_path = "%s/services" % tmp_path
 reporters_path = "%s/reporters" % tmp_path
 repositories_path = "%s/repositories" % tmp_path
@@ -36,6 +37,7 @@ def clean():
         shutil.rmtree(tmp_path)
     os.makedirs(tmp_path, exist_ok=True)
     os.makedirs(policies_path, exist_ok=True)
+    os.makedirs(fetchers_path, exist_ok=True)
     os.makedirs(resources_path, exist_ok=True)
     os.makedirs(services_path, exist_ok=True)
     os.makedirs(reporters_path, exist_ok=True)
@@ -60,6 +62,16 @@ def get_resources(release_json):
         if search_pattern.match(component['name']) and 'gravitee-resource-api' != component['name']:
             resources.append(component)
     return resources
+
+
+def get_fetchers(release_json):
+    components = release_json['components']
+    search_pattern = re.compile('gravitee-fetcher-.*')
+    fetchers = []
+    for component in components:
+        if search_pattern.match(component['name']) and 'gravitee-fetcher-api' != component['name']:
+            fetchers.append(component)
+    return fetchers
 
 
 def get_reporters(release_json):
@@ -191,6 +203,15 @@ def download_gateway(gateway):
     return download(gateway['name'], '%s/%s-%s.zip' % (tmp_path, gateway['name'], gateway['version']), url)
 
 
+def download_fetchers(fetchers):
+    paths = []
+    for fetcher in fetchers:
+        url = get_download_url("io.gravitee.fetcher", fetcher['name'], fetcher['version'], "zip")
+        paths.append(
+            download(fetcher['name'], '%s/%s-%s.zip' % (fetchers_path, fetcher['name'], fetcher['version']), url))
+    return paths
+
+
 def download_resources(resources):
     paths = []
     for resource in resources:
@@ -262,6 +283,7 @@ def prepare_mgmt_bundle(mgmt):
     print("        bundle_path: %s" % bundle_path)
     copy_files_into(policies_path, bundle_path + "plugins")
     copy_files_into(resources_path, bundle_path + "plugins")
+    copy_files_into(fetchers_path, bundle_path + "plugins")
     copy_files_into(repositories_path, bundle_path + "plugins", [".*gravitee-repository-ehcache.*"])
 
 
@@ -414,6 +436,7 @@ def main():
     gateway = download_gateway(get_component_by_name(release_json, "gravitee-gateway"))
     download_policies(get_policies(release_json))
     download_resources(get_resources(release_json))
+    download_fetchers(get_fetchers(release_json))
     download_services(get_services(release_json))
     download_reporters(get_reporters(release_json))
     download_repositories(get_repositories(release_json))
