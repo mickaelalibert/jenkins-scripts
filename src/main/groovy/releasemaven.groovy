@@ -59,10 +59,10 @@ def release(components, boolean dryRun) {
                     withEnv(["GIT_COMMIT=${git_commit}"]) {
                         // deploy
                         if (dryRun) {
-                            sh "mvn -B -U clean install"
+                            sh "mvn -B -U -DREDIS_HOST=${env.REDIS_TEST_HOST} -DREDIS_PORT=${env.REDIS_TEST_PORT} clean install"
                             sh "mvn enforcer:enforce"
                         } else {
-                            sh "mvn -B -U -P gravitee-release clean deploy"
+                            sh "mvn -B -U -DREDIS_HOST=${env.REDIS_TEST_HOST} -DREDIS_PORT=${env.REDIS_TEST_PORT}  -P gravitee-release clean deploy"
                         }
                     }
 
