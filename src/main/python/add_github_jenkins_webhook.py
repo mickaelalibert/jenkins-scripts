@@ -25,9 +25,12 @@ page = 1
 while True:
     r = requests.get('https://api.github.com/orgs/gravitee-io/repos?page=' + str(page), headers=headers)
     page += 1
+    print(r)
     if len(r.json()) == 0:
         break
     for repo in r.json():
+        print("")
+        print(repo)
         print("")
         dirname = repo.get('name')
         print("REPOSITORY: ", dirname)
