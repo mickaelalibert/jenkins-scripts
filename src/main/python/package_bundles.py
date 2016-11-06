@@ -51,6 +51,8 @@ def get_policies(release_json):
     for component in components:
         if search_pattern.match(component['name']) and 'gravitee-policy-api' != component['name']:
             policies.append(component)
+            if "gravitee-policy-ratelimit" == component['name']:
+                policies.append({"name": "gravitee-policy-quota", "version": component['version']})
     return policies
 
 
