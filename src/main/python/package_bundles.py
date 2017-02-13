@@ -29,6 +29,11 @@ bintray_headers = {
     "Content-type": "application/json",
     "Authorization": os.environ.get('BINTRAY_BASIC_TOKEN')
 }
+bintray_upload_headers = {
+    "Content-type": "multipart/mixed",
+    "Authorization": os.environ.get('BINTRAY_BASIC_TOKEN')
+}
+
 
 
 def clean():
@@ -359,7 +364,7 @@ def send_to_bintray(nightlybuild, version, packages):
         url = "%s/%s/%s/%s?publish=1" % (
             bintray_content_url, bintray_version, bintray_version, file.name.rpartition("/")[2])
         print(url)
-        r = requests.put(url, files=files, headers=bintray_headers)
+        r = requests.put(url, files=files, headers=bintray_upload_headers)
         response_pretty_print(r)
 
 
