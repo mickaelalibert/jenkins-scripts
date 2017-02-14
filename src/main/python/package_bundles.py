@@ -358,11 +358,11 @@ def send_to_bintray(nightlybuild, version, packages):
     print("==================================")
     bintray_version = create_bintray_version(nightlybuild, version)
     for p in packages:
-        file = open(p, 'rb').read()
+        file = open(p, 'rb')
         url = "%s/%s/%s/%s?publish=1" % (
             bintray_content_url, bintray_version, bintray_version, file.name.rpartition("/")[2])
         print(url)
-        r = requests.put(url, data=file, headers=bintray_upload_headers)
+        r = requests.put(url, data=file.read(), headers=bintray_upload_headers)
         response_pretty_print(r)
 
 
