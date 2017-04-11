@@ -93,6 +93,8 @@ def get_repositories(release_json):
     components_name = [
         "gravitee-repository-mongodb",
         "gravitee-repository-ehcache",
+        "gravitee-repository-cassandra",
+        "gravitee-repository-redis",
         "gravitee-repository-elasticsearch"
     ]
     repositories = []
