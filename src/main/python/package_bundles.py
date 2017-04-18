@@ -60,14 +60,15 @@ def get_policies(release_json):
 
 
 def get_resources(release_json):
-    components = release_json['components']
-    search_pattern = re.compile('gravitee-resource-.*')
+    components_name = [
+        "gravitee-resource-cache",
+        "gravitee-resource-oauth2-provider-generic",
+        "gravitee-resource-oauth2-provider-am"
+    ]
     resources = []
-    for component in components:
-        if search_pattern.match(component['name']) and 'gravitee-resource-api' != component['name']:
-            resources.append(component)
+    for component_name in components_name:
+        resources.append(get_component_by_name(release_json, component_name))
     return resources
-
 
 def get_fetchers(release_json):
     components = release_json['components']
