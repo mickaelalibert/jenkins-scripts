@@ -246,22 +246,22 @@ def download_ui(ui):
 def download_reporters(reporters):
     paths = []
     for reporter in reporters:
-        url = get_download_url("io.gravitee.reporter", reporter['name'], reporter['version'], "zip")
+        name = "%s-2x" % reporter['name'] if "gravitee-reporter-elasticsearch" == reporter['name'] else reporter['name']
+
+        url = get_download_url("io.gravitee.reporter", name, reporter['version'], "zip")
         paths.append(
-            download(reporter['name'],
-                     '%s/%s-%s.zip' % (reporters_path, reporter['name'], reporter['version']),
-                     url))
+            download(name, '%s/%s-%s.zip' % (reporters_path, name, reporter['version']), url))
     return paths
 
 
 def download_repositories(repositories):
     paths = []
     for repository in repositories:
-        url = get_download_url("io.gravitee.repository", repository['name'], repository['version'], "zip")
+        name = "%s-2x" % repository['name'] if "gravitee-repository-elasticsearch" == repository['name'] else repository['name']
+
+        url = get_download_url("io.gravitee.repository", name, repository['version'], "zip")
         paths.append(
-            download(repository['name'],
-                     '%s/%s-%s.zip' % (repositories_path, repository['name'], repository['version']),
-                     url))
+            download(name, '%s/%s-%s.zip' % (repositories_path, name, repository['version']), url))
     return paths
 
 
