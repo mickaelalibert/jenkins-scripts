@@ -6,7 +6,6 @@ header += 'For upgrade instructions, please refer to https://docs.gravitee.io/ap
 header += '*Important:* If you plan to skip versions when you upgrade, ensure that you read the version-specific upgrade notes for each intermediate version. You may be required to perform manual actions as part of the upgrade.\n\n'
 
 String originChangelog = readFile('CHANGELOG.adoc').replace(header, '')
-originChangelog = originChangelog.replace('# Change Log', '')
 
 String changelog = header
 
@@ -49,7 +48,7 @@ if (milestone) {
 
     println issues.size + ' issues found'
 
-    changelog += '== https://github.com/gravitee-io/issues/milestone/' + milestoneNumber + '?closed=1[' +  System.getProperties().getProperty('MILESTONE_VERSION') + ' (' + milestoneDate.substring(0, 10) + ')]\n'
+    changelog += '\n== https://github.com/gravitee-io/issues/milestone/' + milestoneNumber + '?closed=1[' +  System.getProperties().getProperty('MILESTONE_VERSION') + ' (' + milestoneDate.substring(0, 10) + ')]\n'
 
     // Bug Fixes part
     changelog += generateChangelogPart(issues, 'Bug fixes', 'type: bug')
