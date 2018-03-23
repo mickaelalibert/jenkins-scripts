@@ -56,7 +56,7 @@ if (milestone) {
     // Features part
     changelog += generateChangelogPart(issues, 'Features', 'type: feature')
 
-    // Features part
+    // Improvements part
     changelog += generateChangelogPart(issues, 'Improvements', 'type: enhancement')
 
     changelog += originChangelog
