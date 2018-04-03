@@ -82,7 +82,7 @@ def get_fetchers(release_json):
 
 def get_reporters(release_json):
     components = release_json['components']
-    search_pattern = re.compile('gravitee-reporter-.*')
+    search_pattern = re.compile('(gravitee-reporter-*|gravitee-elasticsearch)')
     reporters = []
     for component in components:
         if search_pattern.match(component['name']) and 'gravitee-reporter-api' != component['name']:
@@ -96,7 +96,7 @@ def get_repositories(release_json):
         "gravitee-repository-ehcache",
 #        "gravitee-repository-cassandra",
 #        "gravitee-repository-redis",
-        "gravitee-repository-elasticsearch"
+        "gravitee-elasticsearch"
     ]
     repositories = []
     for component_name in components_name:
@@ -246,7 +246,7 @@ def download_ui(ui):
 def download_reporters(reporters):
     paths = []
     for reporter in reporters:
-        name = "%s-http" % reporter['name'] if "gravitee-reporter-elasticsearch" == reporter['name'] else reporter['name']
+        name = "gravitee-reporter-elasticsearch" if "gravitee-elasticsearch" == reporter['name'] else reporter['name']
 
         url = get_download_url("io.gravitee.reporter", name, reporter['version'], "zip")
         paths.append(
@@ -257,7 +257,7 @@ def download_reporters(reporters):
 def download_repositories(repositories):
     paths = []
     for repository in repositories:
-        name = "%s-http" % repository['name'] if "gravitee-repository-elasticsearch" == repository['name'] else repository['name']
+        name = "gravitee-repository-elasticsearch" if "gravitee-elasticsearch" == repository['name'] else repository['name']
 
         url = get_download_url("io.gravitee.repository", name, repository['version'], "zip")
         paths.append(
