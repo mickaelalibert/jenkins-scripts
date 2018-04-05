@@ -102,10 +102,10 @@ private String generateChangelogPart(issues, String changelogPartTitle, String t
             for (int j = 0; j < iss.size(); j++) {
                 def title = iss[j].title
                 if (iss[j].title.indexOf(']') > 0) {
-                    title = title.substring(iss[j].title.indexOf(']') + 2)
+                    title = title.substring(iss[j].title.indexOf(']') + 1)
                 }
 
-                titles.add('- ' + title.replace(': ', '').capitalize() + ' ' + iss[j].html_url + '[#' + iss[j].number + ']\n')
+                titles.add('- ' + title.trim().replace(': ', '').capitalize() + ' ' + iss[j].html_url + '[#' + iss[j].number + ']\n')
             }
             titles = titles.sort()
 
