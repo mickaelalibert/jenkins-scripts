@@ -81,12 +81,13 @@ def get_fetchers(release_json):
 
 
 def get_reporters(release_json):
-    components = release_json['components']
-    search_pattern = re.compile('(gravitee-reporter-*|gravitee-elasticsearch)')
+    components_name = [
+        "gravitee-reporter-file",
+        "gravitee-elasticsearch"
+    ]
     reporters = []
-    for component in components:
-        if search_pattern.match(component['name']) and 'gravitee-reporter-api' != component['name']:
-            reporters.append(component)
+    for component_name in components_name:
+        reporters.append(get_component_by_name(release_json, component_name))
     return reporters
 
 
