@@ -3,9 +3,9 @@ import groovy.json.JsonOutput
 
 { ->
     node {
-        git url: 'git@github.com:gravitee-io/release.git', branch: "master"
-        def releaseJSON = readFile encoding: 'UTF-8', file: 'release.json'
         dryRunAsBool = Boolean.valueOf(dryRun)
+        git url: 'git@github.com:gravitee-io/release.git', branch: releaseJsonBranch
+        def releaseJSON = readFile encoding: 'UTF-8', file: 'release.json'
         if (dryRunAsBool) {
             println("\n    ##################################" +
                     "\n    #                                #" +
@@ -24,7 +24,7 @@ import groovy.json.JsonOutput
                 '')
 
         Component[] componentsToRelease = filteredComponentsToRelease(graviteeio, dryRunAsBool)
-        releaseComponents(graviteeio, componentsToRelease, graviteeio.buildDependencies, MavenReleaser, dryRunAsBool)
+        releaseComponents(graviteeio, componentsToRelease, graviteeio.buildDependencies, MavenReleaser, releaseJsonBranch, dryRunAsBool)
     }
 }()
 
@@ -56,7 +56,7 @@ def filteredComponentsToRelease(Graviteeio graviteeIO, dryRun) {
     snapshots
 }
 
-def releaseComponents(graviteeio, componentsToRelease, buildDependencies, MavenReleaser, dryRun) {
+def releaseComponents(graviteeio, componentsToRelease, buildDependencies, MavenReleaser, releaseJsonBranch, dryRun) {
     if ( componentsToRelease == null || componentsToRelease.size() == 0 )
         return
 
@@ -101,20 +101,28 @@ def releaseComponents(graviteeio, componentsToRelease, buildDependencies, MavenR
                 null,
                 '')
         graviteeio.buildTimestamp = new Date()
-        def tag  = null
+        def tag = null
+        def createNewBranch = null
 
         if (releaseReleaseJsonFile) {
             tag = graviteeio.version.releaseVersion()
             graviteeio.version = new Version(graviteeio.version.releaseVersion())
+            if (graviteeio.version.getNextBranchName() != graviteeio.version.getCurrentBranchName()) {
+                createNewBranch = graviteeio.version.getNextBranchName()
+            }
         }
 
         if(updateReleaseJsonFile) {
-            JSONReleaser.updateReleaseJson(toJson(graviteeio.toJsonObject()), tag, dryRun)
+            JSONReleaser.updateReleaseJson(toJson(graviteeio.toJsonObject()), tag, createNewBranch, releaseJsonBranch, dryRun)
         }
 
         if (releaseReleaseJsonFile) {
-            graviteeio.version = new Version(graviteeio.version.nextMinorSnapshotVersion())
-            JSONReleaser.updateReleaseJson(toJson(graviteeio.toJsonObject()), null, dryRun)
+            if (gravitee.version.getCurrentBranchName() == gravitee.version.getNextBranchName()) {
+                graviteeio.version = new Version(graviteeio.version.nextFixSnapshotVersion())
+            } else {
+                graviteeio.version = new Version(graviteeio.version.nextMinorSnapshotVersion())
+            }
+            JSONReleaser.updateReleaseJson(toJson(graviteeio.toJsonObject()), null, null, releaseJsonBranch, dryRun)
         }
     }
 }
@@ -138,7 +146,7 @@ class Graviteeio implements Serializable {
         this.buildDependencies = jsonObj.buildDependencies
         if ( jsonObj.components ) {
             for ( int i = 0; i < jsonObj.components.size(); i++ ) {
-                components.add(new Component(jsonObj.components[i]))
+                components.add(new Component(jsonObj.components[i], this.version))
             }
         }
     }
@@ -184,9 +192,13 @@ class Component implements Serializable {
     String name
     Version version
 
-    Component(jsonObj) {
+    Component(jsonObj, defaultVersion) {
         this.name = jsonObj.name
-        this.version = new Version(jsonObj.version)
+        if (jsonObj.version == null) {
+            this.version = new Version(defaultVersion.version)
+        } else {
+            this.version = new Version(jsonObj.version)
+        }
     }
 }
 
@@ -232,4 +244,15 @@ class Version implements Serializable {
         v
     }
 
+    def getCurrentBranchName() {
+        def b = major + "." + minor + ".x"
+        if (snapshot && fix == 0) {
+            b = "master"
+        }
+        b
+    }
+    def getNextBranchName() {
+        def b = major + "." + minor + ".x"
+        b
+    }
 }

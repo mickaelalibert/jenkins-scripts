@@ -1,9 +1,9 @@
-def updateReleaseJson(json, tag, dryRun) {
+def updateReleaseJson(json, tag, createNewBranch, releaseJsonBranch, dryRun) {
     node {
         ws {
             sh "rm -rf *"
             sh "rm -rf .git"
-            git url: 'git@github.com:gravitee-io/release.git', branch: "master"
+            git url: 'git@github.com:gravitee-io/release.git', branch: releaseJsonBranch
 
             stage "Update release.json"
             println(json)
@@ -18,8 +18,12 @@ def updateReleaseJson(json, tag, dryRun) {
                 sh "git commit -m 'prepareRelease(): update version'"
             }
 
+            if (createNewBranch != null && !dryRun) {
+                sh "git push origin ${releaseJsonBranch}:${createNewBranch}"
+            }
+
             if (!dryRun) {
-                sh "git push --tags origin master"
+                sh "git push --tags origin ${releaseJsonBranch}"
             }
         }
     }

@@ -9,9 +9,8 @@ def release(components, boolean dryRun) {
 
         parallelBuild[c.name] = {
             def scmUrl = "git@github.com:gravitee-io/${c.name}.git"
-            def scmBranch = "master"
+            def scmBranch = c.version.getCurrentBranchName()
             node() {
-                //stage "${c.name} v${c.version.releaseVersion()}"
                 println("\n    scmUrl         = ${scmUrl}" +
                         "\n    scmBranch      = ${scmBranch}" +
                         "\n    releaseVersion = ${c.version.releaseVersion()}" +
@@ -29,20 +28,12 @@ def release(components, boolean dryRun) {
                         "JAVA_HOME=${javaHome}"]) {
 
                     checkout([
-                            $class                           : 'GitSCM',
-                            branches                         : [[
-                                                                        name: "${scmBranch}"
-                                                                ]],
+                            $class: 'GitSCM',
+                            branches: [[ name: "${scmBranch}" ]],
                             doGenerateSubmoduleConfigurations: false,
-                            extensions                       : [[
-                                                                        $class     : 'LocalBranch',
-                                                                        localBranch: "${scmBranch}"
-                                                                ]],
-                            submoduleCfg                     : [],
-                            userRemoteConfigs                : [[
-                                                                        credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d',
-                                                                        url          : "${scmUrl}"
-                                                                ]]
+                            extensions: [[ $class: 'LocalBranch', localBranch: "${scmBranch}" ]],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[ credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d', url: "${scmUrl}" ]]
                     ])
 
                     // set version
@@ -59,10 +50,10 @@ def release(components, boolean dryRun) {
                     withEnv(["GIT_COMMIT=${git_commit}"]) {
                         // deploy
                         if (dryRun) {
-                            sh "mvn -B -U -DREDIS_HOST=${env.REDIS_TEST_HOST} -DREDIS_PORT=${env.REDIS_TEST_PORT} -DELASTIC_HOST=${env.ELASTIC_TEST_HOST} -DELASTIC_PORT=${env.ELASTIC_TEST_PORT} clean install"
+                            sh "mvn -B -U clean install"
                             sh "mvn enforcer:enforce"
                         } else {
-                            sh "mvn -B -U -DREDIS_HOST=${env.REDIS_TEST_HOST} -DREDIS_PORT=${env.REDIS_TEST_PORT} -DELASTIC_HOST=${env.ELASTIC_TEST_HOST} -DELASTIC_PORT=${env.ELASTIC_TEST_PORT} -P gravitee-release clean deploy"
+                            sh "mvn -B -U -P gravitee-release clean deploy"
                         }
                     }
 
@@ -71,8 +62,23 @@ def release(components, boolean dryRun) {
                     sh "git commit -m 'release(${c.version.releaseVersion()})'"
                     sh "git tag ${c.version.releaseVersion()}"
 
+                    //create the maintenance branch if needed
+                    def newSnapshotVersionOnCurrentBranch = c.version.nextFixSnapshotVersion()
+                    if (scmBranch != c.version.getNextBranchName()) {
+                        newSnapshotVersionOnCurrentBranch = c.version.nextMinorSnapshotVersion()
+                        println("create the maintenance branch named '${c.version.getNextBranchName()}'")
+                        sh "git checkout -b ${c.version.getNextBranchName()}"
+                        sh "mvn -B versions:set -DnewVersion=${c.version.nextFixSnapshotVersion()} -DgenerateBackupPoms=false"
+                        sh "git add --update"
+                        sh "git commit -m 'chore(): Prepare next version'"
+                        if ( !dryRun ) {
+                            sh "git push --tags origin ${c.version.getNextBranchName()}"
+                        }
+                        sh "git checkout ${scmBranch}"
+                    }
+
                     // update next version
-                    sh "mvn -B versions:set -DnewVersion=${c.version.nextMinorSnapshotVersion()} -DgenerateBackupPoms=false"
+                    sh "mvn -B versions:set -DnewVersion=${newSnapshotVersionOnCurrentBranch} -DgenerateBackupPoms=false"
 
                     // commit, tag the snapshot
                     sh "git add --update"
