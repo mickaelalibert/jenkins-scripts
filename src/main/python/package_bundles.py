@@ -200,16 +200,18 @@ def download_policies(policies):
     return paths
 
 
-def download_management_api(mgmt_api):
+def download_management_api(mgmt_api, default_version):
+    v = default_version if 'version' not in mgmt_api else mgmt_api['version']
     url = get_download_url("io.gravitee.management.standalone", "gravitee-management-api-standalone-distribution-zip",
-                           mgmt_api['version'], "zip")
-    return download(mgmt_api['name'], '%s/%s-%s.zip' % (tmp_path, mgmt_api['name'], mgmt_api['version']), url)
+                           v, "zip")
+    return download(mgmt_api['name'], '%s/%s-%s.zip' % (tmp_path, mgmt_api['name'], v), url)
 
 
-def download_gateway(gateway):
+def download_gateway(gateway, default_version):
+    v = default_version if 'version' not in gateway else gateway['version']
     url = get_download_url("io.gravitee.gateway.standalone", "gravitee-gateway-standalone-distribution-zip",
-                           gateway['version'], "zip")
-    return download(gateway['name'], '%s/%s-%s.zip' % (tmp_path, gateway['name'], gateway['version']), url)
+                    v, "zip")
+    return download(gateway['name'], '%s/%s-%s.zip' % (tmp_path, gateway['name'], v), url)
 
 
 def download_fetchers(fetchers):
@@ -239,9 +241,10 @@ def download_services(services):
     return paths
 
 
-def download_ui(ui):
-    url = get_download_url("io.gravitee.management", ui['name'], ui['version'], "zip")
-    return download(ui['name'], '%s/%s-%s.zip' % (tmp_path, ui['name'], ui['version']), url)
+def download_ui(ui, default_version):
+    v = default_version if 'version' not in ui else ui['version']
+    url = get_download_url("io.gravitee.management", ui['name'], v, "zip")
+    return download(ui['name'], '%s/%s-%s.zip' % (tmp_path, ui['name'], v), url)
 
 
 def download_reporters(reporters):
@@ -439,9 +442,9 @@ def main():
     print("Create bundles for Gravitee.io v%s" % version)
     clean()
 
-    mgmt_api = download_management_api(get_component_by_name(release_json, "gravitee-management-rest-api"))
-    ui = download_ui(get_component_by_name(release_json, "gravitee-management-webui"))
-    gateway = download_gateway(get_component_by_name(release_json, "gravitee-gateway"))
+    mgmt_api = download_management_api(get_component_by_name(release_json, "gravitee-management-rest-api"), version)
+    ui = download_ui(get_component_by_name(release_json, "gravitee-management-webui"), version)
+    gateway = download_gateway(get_component_by_name(release_json, "gravitee-gateway"), version)
     download_policies(get_policies(release_json))
     download_resources(get_resources(release_json))
     download_fetchers(get_fetchers(release_json))
