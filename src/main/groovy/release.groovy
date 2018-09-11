@@ -117,7 +117,7 @@ def releaseComponents(graviteeio, componentsToRelease, buildDependencies, MavenR
         }
 
         if (releaseReleaseJsonFile) {
-            if (gravitee.version.getCurrentBranchName() == gravitee.version.getNextBranchName()) {
+            if (graviteeio.version.getCurrentBranchName() == graviteeio.version.getNextBranchName()) {
                 graviteeio.version = new Version(graviteeio.version.nextFixSnapshotVersion())
             } else {
                 graviteeio.version = new Version(graviteeio.version.nextMinorSnapshotVersion())
