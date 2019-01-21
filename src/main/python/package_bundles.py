@@ -95,8 +95,6 @@ def get_repositories(release_json):
     components_name = [
         "gravitee-repository-mongodb",
         "gravitee-repository-ehcache",
-#        "gravitee-repository-cassandra",
-#        "gravitee-repository-redis",
         "gravitee-elasticsearch"
     ]
     repositories = []
@@ -106,15 +104,24 @@ def get_repositories(release_json):
 
 
 def get_services(release_json):
+    components_name = [
+        "gravitee-service-discovery-consul"
+    ]
     components = release_json['components']
     search_pattern = re.compile('gravitee-policy-ratelimit')
-    service = None
+    services = []
     for component in components:
         if search_pattern.match(component['name']):
             service = component.copy()
+            service['name'] = 'gravitee-gateway-services-ratelimit'
+            services.append(service)
             break
-    service['name'] = 'gravitee-gateway-services-ratelimit'
-    return [service]
+
+    for component_name in components_name:
+        services.append(get_component_by_name(release_json, component_name))
+
+
+    return services
 
 
 def get_component_by_name(release_json, component_name):
@@ -235,7 +242,10 @@ def download_resources(resources):
 def download_services(services):
     paths = []
     for service in services:
-        url = get_download_url("io.gravitee.policy", service['name'], service['version'], "zip")
+        if service['name'] == "gravitee-gateway-services-ratelimit":
+            url = get_download_url("io.gravitee.policy", service['name'], service['version'], "zip")
+        else:
+            url = get_download_url("io.gravitee.discovery", service['name'], service['version'], "zip")
         paths.append(
             download(service['name'], '%s/%s-%s.zip' % (services_path, service['name'], service['version']), url))
     return paths
