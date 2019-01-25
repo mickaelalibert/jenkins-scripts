@@ -242,12 +242,14 @@ def download_resources(resources):
 def download_services(services):
     paths = []
     for service in services:
-        if service['name'] == "gravitee-gateway-services-ratelimit":
-            url = get_download_url("io.gravitee.policy", service['name'], service['version'], "zip")
-        else:
-            url = get_download_url("io.gravitee.discovery", service['name'], service['version'], "zip")
-        paths.append(
-            download(service['name'], '%s/%s-%s.zip' % (services_path, service['name'], service['version']), url))
+        # for release < 1.22
+        if service is not None:
+            if service['name'] == "gravitee-gateway-services-ratelimit":
+                url = get_download_url("io.gravitee.policy", service['name'], service['version'], "zip")
+            else:
+                url = get_download_url("io.gravitee.discovery", service['name'], service['version'], "zip")
+            paths.append(
+                download(service['name'], '%s/%s-%s.zip' % (services_path, service['name'], service['version']), url))
     return paths
 
 
