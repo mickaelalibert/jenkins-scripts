@@ -309,6 +309,7 @@ def prepare_mgmt_bundle(mgmt):
     copy_files_into(resources_path, bundle_path + "plugins")
     copy_files_into(fetchers_path, bundle_path + "plugins")
     copy_files_into(repositories_path, bundle_path + "plugins", [".*gravitee-repository-ehcache.*"])
+    copy_files_into(services_path, bundle_path + "plugins", [".*gravitee-gateway-services-ratelimit.*"])
 
 
 def prepare_policies(version):
