@@ -4,6 +4,7 @@ import shutil
 import zipfile
 import requests
 from shutil import copy2
+from urllib.request import urlretrieve
 
 # Input parameters
 version_param = os.environ.get('RELEASE_VERSION')
@@ -137,18 +138,31 @@ def get_download_url(group_id, artifact_id, version, t):
     if os.path.exists(m2path):
         return m2path
     else:
-        return "https://oss.sonatype.org/service/local/artifact/maven/redirect?r=%s&g=%s&a=%s&v=%s&e=%s" % (
-            ("snapshots" if snapshotPattern.match(version) else "releases"), group_id, artifact_id, version, t)
+        return "https://oss.sonatype.org/service/local/repositories/%s/content/%s/%s/%s/%s-%s.%s" % (
+            ("snapshots" if snapshotPattern.match(version) else "releases"), group_id.replace(".", "/"), artifact_id, version, artifact_id, version, t)
+
+
+def getSuffixPathByName(name):
+    if name.find("policy") == -1:
+        suffix = name[name.find('-') + 1:name.find('-', name.find('-') + 1)]
+        if suffix == "gateway":
+            return "services"
+        if suffix == "repository":
+            return "repositories"
+        return suffix + "s"
+    else:
+        return "policies"
 
 
 def download(name, filename_path, url):
     print('\nDowloading %s\n%s' % (name, url))
-    copy2(url, filename_path)
-    # response = requests.get(url, stream=True)
-    # content_length = response.headers['Content-Length']
-    # with open(filename_path, "wb") as handle:
-    #     for data in tqdm(response.iter_content(), leave=True, total=int(content_length)):
-    #         handle.write(data)
+    if url.startswith("http"):
+        filename_path = tmp_path + "/" + getSuffixPathByName(name) + url[url.rfind('/'):]
+        urlretrieve(url, filename_path)
+    else:
+        copy2(url, filename_path)
+
+    print('\nDowloaded in %s' % filename_path)
     return filename_path
 
 
