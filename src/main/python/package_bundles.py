@@ -95,7 +95,6 @@ def get_reporters(release_json):
 def get_repositories(release_json):
     components_name = [
         "gravitee-repository-mongodb",
-        "gravitee-repository-ehcache",
         "gravitee-elasticsearch"
     ]
     repositories = []
