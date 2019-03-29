@@ -40,7 +40,11 @@ def release(components, boolean dryRun) {
                     sh "mvn -B versions:set -DnewVersion=${c.version.releaseVersion()} -DgenerateBackupPoms=false"
 
                     // use release version of each -SNAPSHOT gravitee artifact
-                    sh "mvn -B -U versions:update-properties -Dincludes=io.gravitee.*:* -DgenerateBackupPoms=false"
+                    if (c.version.isMaintenance()) {
+                        sh "mvn -B -U versions:update-properties -Dincludes=io.gravitee.*:* -DallowMajorUpdates=false -DallowMinorUpdates=false -DallowIncrementalUpdates=true -DgenerateBackupPoms=false"
+                    } else {
+                        sh "mvn -B -U versions:update-properties -Dincludes=io.gravitee.*:* -DallowMajorUpdates=false -DallowMinorUpdates=true -DallowIncrementalUpdates=true -DgenerateBackupPoms=false"
+                    }
 
                     sh "cat pom.xml"
 

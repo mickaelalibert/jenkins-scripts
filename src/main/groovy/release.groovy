@@ -224,6 +224,10 @@ class Version implements Serializable {
         version
     }
 
+    def isMaintenance() {
+        return fix > 0
+    }
+
     def releaseVersion() {
         def v = major + "." + minor + "." + fix
         v
