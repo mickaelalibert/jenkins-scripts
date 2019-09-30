@@ -3,6 +3,7 @@ import re
 import shutil
 import zipfile
 import requests
+import json
 from shutil import copy2
 from urllib.request import urlretrieve
 
@@ -20,20 +21,6 @@ services_path = "%s/services" % tmp_path
 reporters_path = "%s/reporters" % tmp_path
 repositories_path = "%s/repositories" % tmp_path
 snapshotPattern = re.compile('.*-SNAPSHOT')
-
-# BINTRAY
-publish_to_bintray = True if os.environ.get('PUBLISH_TO_BINTRAY') == "true" else False
-bintray_packages_url = "https://api.bintray.com/packages/gravitee-io/release/distribution"
-bintray_content_url = "https://api.bintray.com/content/gravitee-io/release/distribution"
-bintray_metadata_url = "https://api.bintray.com/file_metadata/gravitee-io/release"
-bintray_headers = {
-    "Content-type": "application/json",
-    "Authorization": os.environ.get('BINTRAY_BASIC_TOKEN')
-}
-bintray_upload_headers = {
-    "Authorization": os.environ.get('BINTRAY_BASIC_TOKEN')
-}
-
 
 
 def clean():
@@ -141,7 +128,7 @@ def get_download_url(group_id, artifact_id, version, t):
             ("snapshots" if snapshotPattern.match(version) else "releases"), group_id.replace(".", "/"), artifact_id, version, artifact_id, version, t)
 
 
-def getSuffixPathByName(name):
+def get_suffix_path_by_name(name):
     if name.find("policy") == -1:
         suffix = name[name.find('-') + 1:name.find('-', name.find('-') + 1)]
         if suffix == "gateway":
@@ -156,7 +143,7 @@ def getSuffixPathByName(name):
 def download(name, filename_path, url):
     print('\nDowloading %s\n%s' % (name, url))
     if url.startswith("http"):
-        filename_path = tmp_path + "/" + getSuffixPathByName(name) + url[url.rfind('/'):]
+        filename_path = tmp_path + "/" + get_suffix_path_by_name(name) + url[url.rfind('/'):]
         urlretrieve(url, filename_path)
     else:
         copy2(url, filename_path)
@@ -335,7 +322,7 @@ def prepare_policies(version):
     copy_files_into(services_path, policies_dist_path)
 
 
-def package(version):
+def package(version, release_json):
     print("==================================")
     print("Packaging")
     packages = []
@@ -343,9 +330,17 @@ def package(version):
     full_zip_name = "graviteeio-full-%s" % version
     full_zip_path = "%s/dist/%s.zip" % (tmp_path, full_zip_name)
     dirs = [os.path.join("%s/dist/" % tmp_path, fn) for fn in next(os.walk("%s/dist/" % tmp_path))[1]]
+    # add release.json
+    jsonfile_name = "release.json"
+    jsonfile_absname = os.path.join("%s/dist/%s" % (tmp_path, jsonfile_name))
+    jsonfile = open(jsonfile_absname, "w")
+    jsonfile.write("%s" % json.dumps(release_json, indent=4))
+    jsonfile.close()
     with zipfile.ZipFile(full_zip_path, "w", zipfile.ZIP_DEFLATED) as full_zip:
         print("Create %s" % full_zip_path)
         packages.append(full_zip_path)
+
+        full_zip.write(jsonfile_absname, jsonfile_name)
         for d in dirs:
             with zipfile.ZipFile("%s.zip" % d, "w", zipfile.ZIP_DEFLATED) as bundle_zip:
                 print("Create %s.zip" % d)
@@ -388,63 +383,6 @@ def clean_dir_names():
         os.rename(d, rename(d))
 
 
-def send_to_bintray(nightlybuild, version, packages):
-    print("==================================")
-    bintray_version = create_bintray_version(nightlybuild, version)
-    for p in packages:
-        file = open(p, 'rb')
-        url = "%s/%s/%s/%s?publish=1" % (
-            bintray_content_url, bintray_version, bintray_version, file.name.rpartition("/")[2])
-        print(url)
-        r = requests.put(url, data=file.read(), headers=bintray_upload_headers)
-        response_pretty_print(r)
-
-
-def delete_bintray_version(version):
-    print("BINTRAY - Delete version %s" % version)
-    r = requests.get("%s/versions/%s" % (bintray_packages_url, version), headers=bintray_headers)
-    if r.status_code == 404:
-        print("          version not exists")
-    else:
-        r = requests.delete("%s/versions/%s" % (bintray_packages_url, version), headers=bintray_headers)
-        response_pretty_print(r)
-
-
-def get_bintray_version(nightlybuild, version):
-    return "nightly" if nightlybuild else version
-
-
-def create_bintray_version(nightlybuild, version):
-    bintray_version = get_bintray_version(nightlybuild, version)
-    if nightlybuild:
-        delete_bintray_version(bintray_version)
-
-    print("BINTRAY - Create version %s" % version)
-    payload = {
-        "name": bintray_version,
-        "desc": "Gravitee.io distribution version %s" % version
-    }
-
-    r = requests.post("%s/versions" % bintray_packages_url, json=payload, headers=bintray_headers)
-    response_pretty_print(r)
-    return bintray_version
-
-
-def update_bintray_download_list(nightlybuild, version, packages):
-    bintray_version = get_bintray_version(nightlybuild, version)
-    full_zip = None
-    search_pattern = re.compile('.*graviteeio-full-.*')
-    for p in packages:
-        if search_pattern.match(p):
-            full_zip = p.rpartition("/")[2]
-            break
-    print("BINTRAY - update download list : %s" % full_zip)
-    payload = {"list_in_downloads": True}
-    r = requests.put("%s/%s/%s" % (bintray_metadata_url, bintray_version, full_zip), json=payload,
-                     headers=bintray_headers)
-    response_pretty_print(r)
-
-
 def response_pretty_print(r):
     print("###########################################################")
     print("STATUS %s" % r.status_code)
@@ -485,10 +423,7 @@ def main():
     prepare_policies(version)
 
     clean_dir_names()
-    packages = package(version)
-    if publish_to_bintray:
-        send_to_bintray(is_latest_param, version, packages)
-        update_bintray_download_list(is_latest_param, version, packages)
+    package(version, release_json)
 
 
 main()
