@@ -216,6 +216,20 @@ def download_management_api(mgmt_api, default_version):
     return download(mgmt_api['name'], '%s/%s-%s.zip' % (tmp_path, mgmt_api['name'], v), url)
 
 
+def download_managementV3_api(mgmt_api, default_version):
+    v = default_version if 'version' not in mgmt_api else mgmt_api['version']
+    url = get_download_url("io.gravitee.rest.api.management.standalone.distribution", "gravitee-rest-api-management-standalone-distribution-zip",
+                           v, "zip")
+    return download(mgmt_api['name'], '%s/%s-%s.zip' % (tmp_path, mgmt_api['name'], v), url)
+
+
+def download_portal_api(mgmt_api, default_version):
+    v = default_version if 'version' not in mgmt_api else mgmt_api['version']
+    url = get_download_url("io.gravitee.rest.api.portal.standalone.distribution", "gravitee-rest-api-portal-standalone-distribution-zip",
+                           v, "zip")
+    return download(mgmt_api['name'], '%s/%s-%s.zip' % (tmp_path, mgmt_api['name'], v), url)
+
+
 def download_gateway(gateway, default_version):
     v = default_version if 'version' not in gateway else gateway['version']
     url = get_download_url("io.gravitee.gateway.standalone", "gravitee-gateway-standalone-distribution-zip",
@@ -258,6 +272,12 @@ def download_services(services):
 def download_ui(ui, default_version):
     v = default_version if 'version' not in ui else ui['version']
     url = get_download_url("io.gravitee.management", ui['name'], v, "zip")
+    return download(ui['name'], '%s/%s-%s.zip' % (tmp_path, ui['name'], v), url)
+
+
+def download_portal_ui(ui, default_version):
+    v = default_version if 'version' not in ui else ui['version']
+    url = get_download_url("io.gravitee.portal", ui['name'], v, "zip")
     return download(ui['name'], '%s/%s-%s.zip' % (tmp_path, ui['name'], v), url)
 
 
@@ -393,6 +413,8 @@ def rename(string):
     return string.replace("gravitee", "graviteeio") \
         .replace("management-standalone", "management-api") \
         .replace("management-webui", "management-ui") \
+        .replace("portal-standalone", "portal-api") \
+        .replace("portal-webui", "portal-ui") \
         .replace("standalone-", "")
 
 
@@ -435,7 +457,14 @@ def main():
     print("Create bundles for Gravitee.io v%s" % version)
     clean()
 
-    mgmt_api = download_management_api(get_component_by_name(release_json, "gravitee-management-rest-api"), version)
+    v3 = int(version[0]) > 1
+    if v3:
+        portal_api = download_portal_api(get_component_by_name(release_json, "gravitee-portal-rest-api"), version)
+        portal_ui = download_portal_ui(get_component_by_name(release_json, "gravitee-portal-webui"), version)
+        mgmt_api = download_managementV3_api(get_component_by_name(release_json, "gravitee-management-rest-api"), version)
+    else:
+        mgmt_api = download_management_api(get_component_by_name(release_json, "gravitee-management-rest-api"), version)
+
     ui = download_ui(get_component_by_name(release_json, "gravitee-management-webui"), version)
     gateway = download_gateway(get_component_by_name(release_json, "gravitee-gateway"), version)
     download_policies(get_policies(release_json))
@@ -446,6 +475,10 @@ def main():
     download_repositories(get_repositories(release_json))
 
     # mongodb
+    if v3:
+        prepare_ui_bundle(portal_ui)
+        prepare_mgmt_bundle(portal_api)
+
     prepare_gateway_bundle(gateway)
     prepare_ui_bundle(ui)
     prepare_mgmt_bundle(mgmt_api)
@@ -454,6 +487,10 @@ def main():
     package(version, release_json)
 
     #jdbc
+    if v3:
+        prepare_ui_bundle(portal_ui, True)
+        prepare_mgmt_bundle(portal_api, True)
+
     prepare_gateway_bundle(gateway, True)
     prepare_ui_bundle(ui, True)
     prepare_mgmt_bundle(mgmt_api, True)
