@@ -43,7 +43,7 @@ def release(components, boolean dryRun) {
                     if (c.version.isMaintenance()) {
                         sh "mvn -B -U versions:update-properties -Dincludes=io.gravitee.*:* -DallowMajorUpdates=false -DallowMinorUpdates=false -DallowIncrementalUpdates=true -DgenerateBackupPoms=false"
                     } else {
-                        sh "mvn -B -U versions:update-properties -Dincludes=io.gravitee.*:* -DallowMajorUpdates=false -DallowMinorUpdates=true -DallowIncrementalUpdates=true -DgenerateBackupPoms=false"
+                        sh "mvn -B -U versions:update-properties -Dincludes=io.gravitee.*:* -DallowMajorUpdates=false -DallowMinorUpdates=false -DallowIncrementalUpdates=true -DgenerateBackupPoms=false"
                     }
 
                     sh "cat pom.xml"
