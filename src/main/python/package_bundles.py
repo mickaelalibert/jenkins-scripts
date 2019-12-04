@@ -399,13 +399,13 @@ def package(version, release_json, jdbc=False):
                         arcname = absname[len(dir_abs_path) - len(dir_name):]
                         bundle_zip.write(absname, arcname)
                         if exclude_from_full_zip is False:
-                            full_zip.write(absname, "%s" % arcname)
+                            full_zip.write(absname, "%s/%s" % (full_zip_name, arcname))
                     if len(files) == 0:
                         absname = os.path.abspath(dirname)
                         arcname = absname[len(dir_abs_path) - len(dir_name):]
                         bundle_zip.write(absname, arcname)
                         if exclude_from_full_zip is False:
-                            full_zip.write(absname, "%s" % arcname)
+                            full_zip.write(absname, "%s/%s" % (full_zip_name, arcname))
     return packages
 
 
