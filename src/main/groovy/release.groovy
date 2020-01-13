@@ -216,7 +216,7 @@ class Version implements Serializable {
         def semver = versionAsString.split("-SNAPSHOT")[0].split("\\.")
         this.major= semver[0] as Integer
         this.minor= semver[1] as Integer
-        this.fix= semver[2].replaceFirst(/-alpha\d?/, '') as Integer
+        this.fix= semver[2] as Integer
     }
 
     @Override
