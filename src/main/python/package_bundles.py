@@ -218,14 +218,7 @@ def download_management_api(mgmt_api, default_version):
 
 def download_managementV3_api(mgmt_api, default_version):
     v = default_version if 'version' not in mgmt_api else mgmt_api['version']
-    url = get_download_url("io.gravitee.rest.api.management.standalone.distribution", "gravitee-rest-api-management-standalone-distribution-zip",
-                           v, "zip")
-    return download(mgmt_api['name'], '%s/%s-%s.zip' % (tmp_path, mgmt_api['name'], v), url)
-
-
-def download_portal_api(mgmt_api, default_version):
-    v = default_version if 'version' not in mgmt_api else mgmt_api['version']
-    url = get_download_url("io.gravitee.rest.api.portal.standalone.distribution", "gravitee-rest-api-portal-standalone-distribution-zip",
+    url = get_download_url("io.gravitee.rest.api.standalone.distribution", "gravitee-rest-api-standalone-distribution-zip",
                            v, "zip")
     return download(mgmt_api['name'], '%s/%s-%s.zip' % (tmp_path, mgmt_api['name'], v), url)
 
@@ -413,7 +406,6 @@ def rename(string):
     return string.replace("gravitee", "graviteeio") \
         .replace("management-standalone", "management-api") \
         .replace("management-webui", "management-ui") \
-        .replace("portal-standalone", "portal-api") \
         .replace("portal-webui", "portal-ui") \
         .replace("standalone-", "")
 
@@ -459,7 +451,6 @@ def main():
 
     v3 = int(version[0]) > 1
     if v3:
-        portal_api = download_portal_api(get_component_by_name(release_json, "gravitee-portal-rest-api"), version)
         portal_ui = download_portal_ui(get_component_by_name(release_json, "gravitee-portal-webui"), version)
         mgmt_api = download_managementV3_api(get_component_by_name(release_json, "gravitee-management-rest-api"), version)
     else:
@@ -477,7 +468,6 @@ def main():
     # mongodb
     if v3:
         prepare_ui_bundle(portal_ui)
-        prepare_mgmt_bundle(portal_api)
 
     prepare_gateway_bundle(gateway)
     prepare_ui_bundle(ui)
@@ -489,7 +479,6 @@ def main():
     #jdbc
     if v3:
         prepare_ui_bundle(portal_ui, True)
-        prepare_mgmt_bundle(portal_api, True)
 
     prepare_gateway_bundle(gateway, True)
     prepare_ui_bundle(ui, True)
