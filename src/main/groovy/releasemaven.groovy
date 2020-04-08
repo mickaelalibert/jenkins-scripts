@@ -57,7 +57,7 @@ def release(components, boolean dryRun) {
                             sh "mvn -B -U clean install"
                             sh "mvn enforcer:enforce"
                         } else {
-                            sh "mvn -B -U -P gravitee-release clean install"
+                            sh "mvn -B -U -P gravitee-release clean deploy"
                         }
                     }
 
