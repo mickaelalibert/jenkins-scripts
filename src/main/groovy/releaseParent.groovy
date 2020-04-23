@@ -20,7 +20,7 @@ node() {
                                                     ]],
                 submoduleCfg                     : [],
                 userRemoteConfigs                : [[
-                                                            credentialsId: 'ce78e461-eab0-44fb-bc8d-15b7159b483d',
+                                                            credentialsId: '31afd483-f394-439f-b865-94c413e6465f',
                                                             url          : "git@github.com:gravitee-io/gravitee-parent.git"
                                                     ]]
         ])

@@ -7,7 +7,7 @@ node {
             doGenerateSubmoduleConfigurations: false,
             extensions: [[$class: 'LocalBranch', localBranch: 'master']],
             submoduleCfg: [],
-            userRemoteConfigs: [[credentialsId: '6a9f959a-dc73-4c4a-a998-049d3c725d34', url: 'git@github.com:gravitee-io/issues.git']]])
+            userRemoteConfigs: [[credentialsId: '31afd483-f394-439f-b865-94c413e6465f', url: 'git@github.com:gravitee-io/issues.git']]])
 
     sh "docker run --rm --env MILESTONE_VERSION='${MILESTONE_VERSION}' -v '$WORKSPACE':/data graviteeio/changelog"
 

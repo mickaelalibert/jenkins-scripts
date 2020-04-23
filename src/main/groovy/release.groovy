@@ -4,7 +4,23 @@ import groovy.json.JsonOutput
 { ->
     node {
         dryRunAsBool = Boolean.valueOf(dryRun)
-        git url: 'git@github.com:gravitee-io/release.git', branch: releaseJsonBranch
+        //git url: 'git@github.com:gravitee-io/release.git', branch: releaseJsonBranch
+        checkout([
+                $class: 'GitSCM',
+                branches: [[ name: "${releaseJsonBranch}" ]],
+                doGenerateSubmoduleConfigurations: false,
+                extensions: [[
+                             $class: 'LocalBranch',
+                             localBranch: "${releaseJsonBranch}"
+                ]],
+                submoduleCfg: [],
+                userRemoteConfigs: [[
+                                     credentialsId: '31afd483-f394-439f-b865-94c413e6465f',
+                                     url: "git@github.com:gravitee-io/release.git"
+                ]]
+        ])
+
+
         def releaseJSON = readFile encoding: 'UTF-8', file: 'release.json'
         if (dryRunAsBool) {
             println("\n    ##################################" +
