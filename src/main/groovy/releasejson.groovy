@@ -3,7 +3,21 @@ def updateReleaseJson(json, tag, createNewBranch, releaseJsonBranch, dryRun) {
         ws {
             sh "rm -rf *"
             sh "rm -rf .git"
-            git url: 'git@github.com:gravitee-io/release.git', branch: releaseJsonBranch
+            //git url: 'git@github.com:gravitee-io/release.git', branch: releaseJsonBranch
+            checkout([
+                    $class: 'GitSCM',
+                    branches: [[ name: "${releaseJsonBranch}" ]],
+                    doGenerateSubmoduleConfigurations: false,
+                    extensions: [[
+                                         $class: 'LocalBranch',
+                                         localBranch: "${releaseJsonBranch}"
+                                 ]],
+                    submoduleCfg: [],
+                    userRemoteConfigs: [[
+                                                credentialsId: '31afd483-f394-439f-b865-94c413e6465f',
+                                                url: "git@github.com:gravitee-io/release.git"
+                                        ]]
+            ])
 
             stage "Update release.json"
             println(json)
